@@ -9,7 +9,7 @@
 # =============================================================================
 import numpy as np
 import scipy as sp
-
+from scipy.sparse import issparse
 
 def is_diagonally_dominant(A: np.ndarray | sp.sparse.csc_array) -> bool | None:
     """Funkcja sprawdzająca czy podana macierz jest diagonalnie zdominowana.
@@ -26,18 +26,24 @@ def is_diagonally_dominant(A: np.ndarray | sp.sparse.csc_array) -> bool | None:
     if not isinstance(A, (np.ndarray, sp.sparse.csc_array)):
         return None
     
-    if len(A.shape) != 2:
+    if A.ndim !=2:
         return None
     
     if A.shape[0] != A.shape[1]:
         return None
 
-    diag = np.diagonal(A)
+    if issparse(A):
+        A = A.toarray()
 
-    for i in range(0, A.shape[0]):
-        if not np.abs(diag[i]) > np.sum(np.abs(A[i, :])) - np.abs(diag[i]):
-            return False
-    return True
+    # Diagonal elements
+    diag_elements = np.abs(np.diagonal(A))
+
+    # Sum of absolute values of non-diagonal elements in each row
+    row_sums = np.sum(np.abs(A), axis=1) - diag_elements
+
+    # Check if diagonal elements are greater than the sum of non-diagonal elements
+    return np.all(diag_elements > row_sums)
+
 
 
 def residual_norm(A: np.ndarray, x: np.ndarray, b: np.ndarray) -> float | None:
